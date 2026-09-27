@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Budget{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Budget Planning — {{ month }}/{{ year }}</h3>
+  <form method="GET" class="d-flex gap-2">
+    <select name="month" class="form-select form-select-sm">
+      {% for m in range(1,13) %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <input type="number" name="year" value="{{ year }}" class="form-control form-control-sm" style="width:90px">
+    <button class="btn btn-sm btn-outline-secondary">View</button>
+  </form>
+</div>
+
+<div class="card p-3 mb-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h6 class="mb-1">✨ AI-Powered Budget Generation</h6>
+      <p class="text-muted mb-0 small">Generates a suggested allocation across all your categories based on this month's income.</p>
+    </div>
+    <form method="POST" action="{{ url_for('budget.generate') }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="year" value="{{ year }}">
+      <button class="btn btn-primary">Generate AI Budget</button>
+    </form>
+  </div>
+</div>
+
+<div class="card p-3">
+  <h6>Budget vs Actual Spend</h6>
+  <table class="table table-sm">
+    <thead><tr><th>Category</th><th>Planned</th><th>Actual</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for b in budgets %}
+      {% set actual = spend_by_category.get(b.category_id, 0) %}
+      <tr class="{{ 'table-danger' if actual > b.planned_amount else '' }}">
+        <td>{{ b.category.name }} {% if b.ai_generated %}<span class="badge bg-info text-dark">AI</span>{% endif %}</td>
+        <td>₹{{ "%.2f"|format(b.planned_amount) }}</td>
+        <td>₹{{ "%.2f"|format(actual) }}</td>
+        <td>{{ "Over Budget" if actual > b.planned_amount else "On Track" }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="text-muted text-center">No budget set for this month yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

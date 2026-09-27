@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Monthly Report{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Monthly Financial Report — {{ month }}/{{ year }}</h3>
+  <form method="GET" class="d-flex gap-2">
+    <select name="month" class="form-select form-select-sm">
+      {% for m in range(1,13) %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <input type="number" name="year" value="{{ year }}" class="form-control form-control-sm" style="width:90px">
+    <button class="btn btn-sm btn-outline-secondary">View</button>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card stat-card"><h6>Total Income</h6><div class="value text-success">₹{{ "%.2f"|format(total_income) }}</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stat-card"><h6>Total Expenses</h6><div class="value text-danger">₹{{ "%.2f"|format(total_expenses) }}</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stat-card"><h6>Net Savings</h6><div class="value {{ 'text-success' if savings >= 0 else 'text-danger' }}">₹{{ "%.2f"|format(savings) }}</div></div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4">
+  <h6>Category-Wise Expense Breakdown</h6>
+  <table class="table table-sm">
+    <thead><tr><th>Category</th><th>Amount</th><th>% of Total Expenses</th></tr></thead>
+    <tbody>
+    {% for cat, amount in category_totals.items() %}
+      <tr>
+        <td>{{ cat }}</td>
+        <td>₹{{ "%.2f"|format(amount) }}</td>
+        <td>{{ "%.1f"|format((amount / total_expenses * 100) if total_expenses else 0) }}%</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="text-muted text-center">No expenses this period.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card p-3">
+  <h6>Budget Plan for This Period</h6>
+  <table class="table table-sm">
+    <thead><tr><th>Category</th><th>Planned</th><th>Source</th></tr></thead>
+    <tbody>
+    {% for b in budgets %}
+      <tr>
+        <td>{{ b.category.name }}</td>
+        <td>₹{{ "%.2f"|format(b.planned_amount) }}</td>
+        <td>{{ "AI-Generated" if b.ai_generated else "Manual" }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="text-muted text-center">No budget defined for this period.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

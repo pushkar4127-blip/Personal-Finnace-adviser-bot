@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Dashboard — {{ month }}/{{ year }}</h3>
+  <form method="GET" class="d-flex gap-2">
+    <select name="month" class="form-select form-select-sm">
+      {% for m in range(1,13) %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+    <input type="number" name="year" value="{{ year }}" class="form-control form-control-sm" style="width:90px">
+    <button class="btn btn-sm btn-outline-secondary">View</button>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card stat-card">
+      <h6>Total Income</h6>
+      <div class="value text-success">₹{{ "%.2f"|format(total_income) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card">
+      <h6>Total Expenses</h6>
+      <div class="value text-danger">₹{{ "%.2f"|format(total_expenses) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card">
+      <h6>Net Balance</h6>
+      <div class="value {{ 'text-success' if net >= 0 else 'text-danger' }}">₹{{ "%.2f"|format(net) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card">
+      <h6>Savings Goal Progress</h6>
+      <div class="value">{{ savings_progress }}%</div>
+      <div class="progress mt-2">
+        <div class="progress-bar bg-success" style="width: {{ savings_progress }}%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6>Expense Breakdown by Category</h6>
+      <canvas id="categoryChart" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <h6>Budget vs Actual</h6>
+      <canvas id="budgetChart" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0">AI Financial Recommendations</h6>
+    <form method="POST" action="{{ url_for('dashboard.generate_recommendations') }}">
+      <input type="hidden" name="month" value="{{ month }}">
+      <input type="hidden" name="year" value="{{ year }}">
+      <button class="btn btn-sm btn-primary">✨ Generate New Insights</button>
+    </form>
+  </div>
+  {% if recommendations %}
+    <ul class="list-group list-group-flush">
+      {% for r in recommendations %}
+        <li class="list-group-item">{{ r.content }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted mb-0">No recommendations yet — click "Generate New Insights" above.</p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const categoryLabels = {{ category_totals.keys()|list|tojson }};
+  const categoryValues = {{ category_totals.values()|list|tojson }};
+
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: categoryLabels,
+      datasets: [{ data: categoryValues, backgroundColor: [
+        '#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc949','#af7aa1','#ff9da7'
+      ]}]
+    },
+    options: { responsive: true }
+  });
+
+  const budgetData = {{ budget_vs_actual|tojson }};
+  new Chart(document.getElementById('budgetChart'), {
+    type: 'bar',
+    data: {
+      labels: budgetData.map(b => b.category),
+      datasets: [
+        { label: 'Planned', data: budgetData.map(b => b.planned), backgroundColor: '#4e79a7' },
+        { label: 'Actual', data: budgetData.map(b => b.actual), backgroundColor: '#e15759' }
+      ]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+</script>
+{% endblock %}
